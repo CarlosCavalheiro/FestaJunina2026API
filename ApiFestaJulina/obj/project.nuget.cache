@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "L5ewBuOS9+k=",
+  "dgSpecHash": "HxkNvNEzqAk=",
   "success": true,
-  "projectFilePath": "C:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\APP_FestaJulina\\ApiFestaJulina\\ApiFestaJulina.csproj",
+  "projectFilePath": "C:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Carlos\\.nuget\\packages\\bouncycastle.cryptography\\2.6.2\\bouncycastle.cryptography.2.6.2.nupkg.sha512",
     "C:\\Users\\Carlos\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",

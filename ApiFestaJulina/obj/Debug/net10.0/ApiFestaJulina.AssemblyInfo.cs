@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ApiFestaJulina")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6fd9be4526d64cbc907c79b0e0355d29c041572a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+697400580b29bedd0349f5d3d06bf3578a567dfb")]
 [assembly: System.Reflection.AssemblyProductAttribute("ApiFestaJulina")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ApiFestaJulina")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
