@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiFestaJulina", "ApiFestaJulina.csproj", "{4E5D00E1-08F6-6778-AEC9-7EF7B273047D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4E5D00E1-08F6-6778-AEC9-7EF7B273047D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E5D00E1-08F6-6778-AEC9-7EF7B273047D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E5D00E1-08F6-6778-AEC9-7EF7B273047D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E5D00E1-08F6-6778-AEC9-7EF7B273047D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {94C95D60-C666-437E-A348-B02090033A10}
+	EndGlobalSection
+EndGlobal

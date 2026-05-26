@@ -1,0 +1,6 @@
+@ApiFestaJulina_HostAddress = http://localhost:5038
+
+GET {{ApiFestaJulina_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
