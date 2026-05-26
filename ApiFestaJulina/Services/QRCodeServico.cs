@@ -1,11 +1,6 @@
 using QRCoder;
 using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Text;
 using System.Security.Cryptography;
 
@@ -15,28 +10,18 @@ namespace ApiFestaJulina.Services
     {
 
         private HashAlgorithm _algoritmo;
+        private readonly AzureBlobStorageService _blobStorageService;
 
-        public QRCodeServico(HashAlgorithm algoritmo)
+        public QRCodeServico(HashAlgorithm algoritmo, AzureBlobStorageService blobStorageService)
         {
             _algoritmo = algoritmo;
+            _blobStorageService = blobStorageService;
         }
 
         public byte[] GerarQRCode(string textoCodificar, string nomeArquivo)
         {
-            // Pega o caminho físico da wwwroot
-            
-            string caminhoArquivo = System.Environment.CurrentDirectory + "\\..\\uploads\\QrCodes";
-            //var caminhoArquivo = Path.Combine("\\Sites\\uploads\\QrCodes");
-
-            if (!Directory.Exists(caminhoArquivo))
-            {
-                Directory.CreateDirectory(caminhoArquivo);
-            }
-
-            Console.WriteLine(caminhoArquivo);
-            
-            // Exemplo: Criar um caminho para uma pasta/arquivo específico dentro da wwwroot
-            string pastaUploads = Path.Combine(caminhoArquivo, nomeArquivo + ".png");
+            const string pastaBlob = "qrcodes";
+            var nomeFinalArquivo = nomeArquivo + ".png";
 
             using (QRCodeGenerator gerador = new QRCodeGenerator())
             {
@@ -45,9 +30,8 @@ namespace ApiFestaJulina.Services
                     using (PngByteQRCode qrCodeEmBytes = new PngByteQRCode(dadosQR))
                     {
                         byte[] imagemQRCodeArray = qrCodeEmBytes.GetGraphic(2);
-                        
-                        
-                        File.WriteAllBytes(pastaUploads, imagemQRCodeArray);
+
+                        _blobStorageService.UploadBytes(imagemQRCodeArray, pastaBlob, nomeFinalArquivo, "image/png");
 
                         return imagemQRCodeArray;
                     }

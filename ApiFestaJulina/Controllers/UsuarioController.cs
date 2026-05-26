@@ -24,8 +24,8 @@ namespace ApiFestaJulina.Controllers
     {
         private readonly AppDbContext _context;
         private HashAlgorithm _algoritmo;
-        private readonly IWebHostEnvironment _env;
         private readonly EmailService _emailService;
+        private readonly AzureBlobStorageService _blobStorageService;
 
         private readonly string[] _allowedExtensions =
         {
@@ -38,13 +38,13 @@ namespace ApiFestaJulina.Controllers
         public UsuarioController(
             AppDbContext context,
             HashAlgorithm algoritmo,
-            IWebHostEnvironment env,
-            EmailService emailService)
+            EmailService emailService,
+            AzureBlobStorageService blobStorageService)
         {
             _context = context;
             _algoritmo = algoritmo;
-            _env = env;
             _emailService = emailService;
+            _blobStorageService = blobStorageService;
         }
 
         [HttpPost("login")]
@@ -464,34 +464,23 @@ public async Task<ActionResult> SolicitarMudancaSenha(RecuperarSenhaDTO dados)
 
             var extensoesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".webp" };
             var extensao = Path.GetExtension(file.FileName).ToLower();
-            var pathSaveImage = Path.Combine("\\uploads\\FotoPerfil");
-
-            if (!Directory.Exists(pathSaveImage))
-            {
-                Directory.CreateDirectory(pathSaveImage);
-            }
+            const string pastaBlob = "fotoperfil";
 
             if (!string.IsNullOrEmpty(usuario.ImagemPerfil))
             {
-                var caminhoAntigo = Path.Combine(pathSaveImage, usuario.ImagemPerfil);
-
-                if (System.IO.File.Exists(caminhoAntigo))
-                {
-                    System.IO.File.Delete(caminhoAntigo);
-                }
+                await _blobStorageService.DeleteIfExistsAsync(pastaBlob, usuario.ImagemPerfil);
             }
 
             var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
-            var fullPath = Path.Combine(pathSaveImage, fileName);
 
             if (!_allowedExtensions.Contains(extensao))
             {
                 return BadRequest("Formato inválido! Apenas JPG, PNG, JPEG e WEBP");
             }
 
-            using (var stream = new FileStream(fullPath, FileMode.Create))
+            using (var stream = file.OpenReadStream())
             {
-                await file.CopyToAsync(stream);
+                await _blobStorageService.UploadFileAsync(stream, pastaBlob, fileName, file.ContentType);
             }
 
             usuario.ImagemPerfil = fileName;
@@ -501,7 +490,8 @@ public async Task<ActionResult> SolicitarMudancaSenha(RecuperarSenhaDTO dados)
             return Ok(new
             {
                 mensagem = "Foto atualizada!",
-                arquivo = fileName
+                arquivo = fileName,
+                url = _blobStorageService.GetBlobUrl(pastaBlob, fileName)
             });
         }
     }

@@ -1,4 +1,6 @@
 using System.Security.Cryptography;
+using Azure.Identity;
+using Azure.Storage.Blobs;
 using ApiFestaJulina.Repository;
 using ApiFestaJulina.Services;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +38,25 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Serviços personalizados
 builder.Services.AddScoped<QRCodeServico>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddSingleton<BlobServiceClient>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var connectionString = configuration["AzureBlobStorage:ConnectionString"];
+    var serviceUri = configuration["AzureBlobStorage:ServiceUri"];
+
+    if (!string.IsNullOrWhiteSpace(connectionString))
+    {
+        return new BlobServiceClient(connectionString);
+    }
+
+    if (string.IsNullOrWhiteSpace(serviceUri))
+    {
+        throw new InvalidOperationException("Configure AzureBlobStorage:ServiceUri ou AzureBlobStorage:ConnectionString.");
+    }
+
+    return new BlobServiceClient(new Uri(serviceUri), new DefaultAzureCredential());
+});
+builder.Services.AddScoped<AzureBlobStorageService>();
 
 // JWT
 builder.Services.AddAuthentication("Bearer")

@@ -18,16 +18,15 @@ namespace ApiFestaJulina.Controllers
     {
         private readonly QRCodeServico _qrCodeServico;
         private readonly AppDbContext _context;
-
-        private readonly IWebHostEnvironment _env;
         private readonly ILogger<PedidosController> _logger;
+        private readonly AzureBlobStorageService _blobStorageService;
 
-        public PedidosController(AppDbContext context, IWebHostEnvironment env, QRCodeServico qrCodeServico, ILogger<PedidosController> logger)
+        public PedidosController(AppDbContext context, QRCodeServico qrCodeServico, ILogger<PedidosController> logger, AzureBlobStorageService blobStorageService)
         {
             _context = context;
-            _env = env;
             _qrCodeServico = qrCodeServico;
             _logger = logger;
+            _blobStorageService = blobStorageService;
         }
 
         
@@ -222,34 +221,28 @@ namespace ApiFestaJulina.Controllers
             var extensoesPermitidas = new [] { ".jpg", ".jpeg", ".png", ".pdf", ".webp"};
             var extensao = Path.GetExtension(file.FileName).ToLower();
             var pedido = await _context.Pedidos.FirstOrDefaultAsync(p => p.IdPedido == id);
-            var pathSaveImage = Path.Combine("\\Sites\\uploads\\ComprovantesPixs");
+            const string pastaBlob = "comprovantes";
 
-            if (!Directory.Exists(pathSaveImage))
+            if (pedido == null)
             {
-                Directory.CreateDirectory(pathSaveImage);
+                return NotFound("Pedido não encontrado");
             }
 
             if (!string.IsNullOrEmpty(pedido.FtComprovante))
             {
-                var caminhoAntigo = Path.Combine(pathSaveImage, pedido.FtComprovante);
-
-                if (System.IO.File.Exists(caminhoAntigo))
-                {
-                    System.IO.File.Delete(caminhoAntigo);
-                }
+                await _blobStorageService.DeleteIfExistsAsync(pastaBlob, pedido.FtComprovante);
             }
 
             var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
-            var fullPath = Path.Combine(pathSaveImage, fileName);
 
             if (!extensoesPermitidas.Contains(extensao))
             {
                 return BadRequest("Formato inválido! Apenas JPG, PNG, JPEG, PDF e WEBP");
             }
 
-            using (var stream = new FileStream(fullPath, FileMode.Create))
+            using (var stream = file.OpenReadStream())
             {
-                await file.CopyToAsync(stream);
+                await _blobStorageService.UploadFileAsync(stream, pastaBlob, fileName, file.ContentType);
             }
 
             pedido.FtComprovante = fileName;
@@ -257,7 +250,12 @@ namespace ApiFestaJulina.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { mensagem = "Foto atualizada!", arquivo = fileName});
+            return Ok(new
+            {
+                mensagem = "Foto atualizada!",
+                arquivo = fileName,
+                url = _blobStorageService.GetBlobUrl(pastaBlob, fileName)
+            });
         }
         
         
