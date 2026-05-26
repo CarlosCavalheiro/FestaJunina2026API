@@ -17,9 +17,9 @@ builder.Services.AddControllers();
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("FrontendCors", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("https://festajulina.senailp.com.br")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -32,7 +32,12 @@ builder.Services.AddScoped<HashAlgorithm>(_ => SHA512.Create());
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnectionFestaJunina"),
-        new MySqlServerVersion(new Version(8, 0, 36))
+        new MySqlServerVersion(new Version(8, 0, 36)),
+        mySqlOptions => mySqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null
+        )
     ));
 
 // Serviços personalizados
@@ -99,7 +104,9 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
-app.UseCors();
+app.UseRouting();
+
+app.UseCors("FrontendCors");
 
 app.UseAuthentication();
 
