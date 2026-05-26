@@ -101,7 +101,7 @@ namespace ApiFestaJulina.Controllers
             _context.Pedidos.Add(pedido);
             await _context.SaveChangesAsync();
 
-            var lotesCarregados = new Dictionary<int, Lotes>();
+            var ingressosCriados = new List<Ingressos>();
 
             foreach (var ingressoDto in dto.ListaIngressos)
             {
@@ -143,9 +143,20 @@ namespace ApiFestaJulina.Controllers
                 };
 
                 _context.Ingressos.Add(ingresso);
+                ingressosCriados.Add(ingresso);
             }
 
                 await _context.SaveChangesAsync();
+
+                foreach (var ingresso in ingressosCriados)
+                {
+                    if (string.IsNullOrWhiteSpace(ingresso.QrCode))
+                    {
+                        continue;
+                    }
+
+                    _qrCodeServico.GerarQRCode(ingresso.QrCode, ingresso.IdIngresso.ToString());
+                }
 
                 
                 return Ok("Pedido criado com sucesso!");
