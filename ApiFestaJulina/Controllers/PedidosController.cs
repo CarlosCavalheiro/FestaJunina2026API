@@ -255,7 +255,7 @@ namespace ApiFestaJulina.Controllers
             pedido.FtComprovante = fileName;
             pedido.IdStatus = 4;
 
-            await _context.SaveChangesAsync();-ed4r gf
+            await _context.SaveChangesAsync();
 
             return Ok(new { mensagem = "Foto atualizada!", arquivo = fileName});
         }
