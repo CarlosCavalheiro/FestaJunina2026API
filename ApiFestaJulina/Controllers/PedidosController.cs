@@ -203,10 +203,21 @@ namespace ApiFestaJulina.Controllers
                 return NotFound();
             }
 
-            _context.Pedidos.Remove(pedido);
+            var (quantidadeIngressos, erro) = await AtualizarStatusPedidoEIngressosAsync(pedido, 3);
+            if (!string.IsNullOrEmpty(erro))
+            {
+                return BadRequest(erro);
+            }
+
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new
+            {
+                mensagem = "Pedido cancelado com sucesso",
+                pedidoId = pedido.IdPedido,
+                status = pedido.IdStatus,
+                quantidadeIngressos
+            });
         }
 
         [RequestSizeLimit(5 * 1024 * 1024)]
@@ -283,80 +294,15 @@ namespace ApiFestaJulina.Controllers
 
             int novoStatus = dto.IdStatus;
             
-            if (novoStatus != 1 || novoStatus != 2 || novoStatus != 3)
+            if (novoStatus != 1 && novoStatus != 2 && novoStatus != 3)
             {
                 return BadRequest("Status inválido. Use: 1=Pendente, 2=Pago, 3=Cancelado");
             }
 
-            pedido.IdStatus = novoStatus;
-            pedido.DtaFechamento = DateTime.Now;
-
-            int quantidadeIngressos = 0;
-
-            if (novoStatus == 2)
+            var (quantidadeIngressos, erro) = await AtualizarStatusPedidoEIngressosAsync(pedido, novoStatus);
+            if (!string.IsNullOrEmpty(erro))
             {
-                var ingressos = await _context.Ingressos
-                    .Where(i => i.IdPedido == id_pedido)
-                    .ToListAsync();
-
-                if (!ingressos.Any())
-                {
-                    return BadRequest("Nenhum ingresso encontrado para este pedido");
-                }
-
-                foreach (var ingresso in ingressos)
-                {
-                    ingresso.IdStatusValidacao = 2;
-                }
-
-                quantidadeIngressos = ingressos.Count;
-            }
-
-            if (novoStatus == 3)
-            {
-                var ingressos = await _context.Ingressos
-                    .Where(i => i.IdPedido == id_pedido)
-                    .ToListAsync();
-
-                foreach (var ingresso in ingressos)
-                {
-                    ingresso.IdStatusValidacao = 4;
-
-                    var loteAtual = await _context.Lotes
-                        .FirstOrDefaultAsync(l => l.IdLote == ingresso.IdLote);
-
-                    if (loteAtual != null)
-                    {
-                        // Se for infantil, devolve nele mesmo
-                        if (loteAtual.TipoLote == 2)
-                        {
-                            loteAtual.Saldo++;
-                        }
-                        else
-                        {
-                            // Busca o próximo lote comum
-                            var proximoLote = await _context.Lotes
-                                .Where(l =>
-                                    l.TipoLote == 1 &&
-                                    l.IdLote > loteAtual.IdLote)
-                                .OrderBy(l => l.IdLote)
-                                .FirstOrDefaultAsync();
-
-                            // Se existir próximo lote, soma nele
-                            if (proximoLote != null)
-                            {
-                                proximoLote.Saldo++;
-                            }
-                            else
-                            {
-                                // Se não existir, devolve ao atual
-                                loteAtual.Saldo++;
-                            }
-                        }
-                    }
-                }
-
-                quantidadeIngressos = ingressos.Count;
+                return BadRequest(erro);
             }
 
             await _context.SaveChangesAsync();
@@ -391,8 +337,12 @@ namespace ApiFestaJulina.Controllers
                 return BadRequest("Status inválido");
             }
 
-            pedido.IdStatus = novoStatus;
-           
+            var (quantidadeIngressos, erro) = await AtualizarStatusPedidoEIngressosAsync(pedido, novoStatus);
+            if (!string.IsNullOrEmpty(erro))
+            {
+                return BadRequest(erro);
+            }
+
             pedido.UltimaAcaoPor = id_usuario;
            
             await _context.SaveChangesAsync();
@@ -400,8 +350,81 @@ namespace ApiFestaJulina.Controllers
             return Ok(new
             {
                 mensagem = "Status atualizado com sucesso!!!",
-                pedido
+                pedido,
+                quantidadeIngressos
             });
+        }
+
+        private async Task<(int QuantidadeIngressos, string? Erro)> AtualizarStatusPedidoEIngressosAsync(Pedidos pedido, int novoStatus)
+        {
+            pedido.IdStatus = novoStatus;
+            pedido.DtaFechamento = DateTime.Now;
+
+            int quantidadeIngressos = 0;
+
+            if (novoStatus == 2)
+            {
+                var ingressos = await _context.Ingressos
+                    .Where(i => i.IdPedido == pedido.IdPedido)
+                    .ToListAsync();
+
+                if (!ingressos.Any())
+                {
+                    return (0, "Nenhum ingresso encontrado para este pedido");
+                }
+
+                foreach (var ingresso in ingressos)
+                {
+                    ingresso.IdStatusValidacao = 2;
+                }
+
+                quantidadeIngressos = ingressos.Count;
+            }
+
+            if (novoStatus == 3)
+            {
+                var ingressos = await _context.Ingressos
+                    .Where(i => i.IdPedido == pedido.IdPedido)
+                    .ToListAsync();
+
+                foreach (var ingresso in ingressos)
+                {
+                    ingresso.IdStatusValidacao = 4;
+
+                    var loteAtual = await _context.Lotes
+                        .FirstOrDefaultAsync(l => l.IdLote == ingresso.IdLote);
+
+                    if (loteAtual == null)
+                    {
+                        continue;
+                    }
+
+                    if (loteAtual.TipoLote == 2)
+                    {
+                        loteAtual.Saldo++;
+                    }
+                    else
+                    {
+                        var proximoLote = await _context.Lotes
+                            .Where(l => l.TipoLote == 1 && l.IdLote > loteAtual.IdLote)
+                            .OrderBy(l => l.IdLote)
+                            .FirstOrDefaultAsync();
+
+                        if (proximoLote != null)
+                        {
+                            proximoLote.Saldo++;
+                        }
+                        else
+                        {
+                            loteAtual.Saldo++;
+                        }
+                    }
+                }
+
+                quantidadeIngressos = ingressos.Count;
+            }
+
+            return (quantidadeIngressos, null);
         }
 
     }
