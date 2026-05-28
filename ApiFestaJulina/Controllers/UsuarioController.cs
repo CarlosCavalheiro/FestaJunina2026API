@@ -355,10 +355,36 @@ public async Task<ActionResult> SolicitarMudancaSenha(RecuperarSenhaDTO dados)
         [HttpPost("Registro")]
         public async Task<ActionResult<Usuarios>> RegistroUsuario(NewUsuario newUsuario)
         {
+            if (newUsuario == null)
+            {
+                return BadRequest("Dados do usuário são obrigatórios");
+            }
+
+            var nomeNormalizado = newUsuario.Nome?.Trim();
+            var emailNormalizado = newUsuario.Email?.Trim().ToLowerInvariant();
+
+            if (string.IsNullOrWhiteSpace(nomeNormalizado))
+            {
+                return BadRequest("Nome é obrigatório");
+            }
+
+            if (string.IsNullOrWhiteSpace(emailNormalizado))
+            {
+                return BadRequest("Email é obrigatório");
+            }
+
+            var emailJaCadastrado = await _context.Usuarios
+                .AnyAsync(u => u.Email.ToLower() == emailNormalizado);
+
+            if (emailJaCadastrado)
+            {
+                return BadRequest("Já existe um usuário com esse email");
+            }
+
             Usuarios usuario = new Usuarios
             {
-                Nome = newUsuario.Nome,
-                Email = newUsuario.Email,
+                Nome = nomeNormalizado,
+                Email = emailNormalizado,
                 Senha = CriptografarSenha(newUsuario.Senha),
                 Telefone = newUsuario.Telefone,
                 IdPerfil = newUsuario.IdPerfil,
@@ -401,8 +427,29 @@ public async Task<ActionResult> SolicitarMudancaSenha(RecuperarSenhaDTO dados)
                 return NotFound("Usuario não encontrado!");
             }
 
-            usuarioExist.Nome = usuarioUpdate.Nome;
-            usuarioExist.Email = usuarioUpdate.Email;
+            var nomeNormalizado = usuarioUpdate.Nome?.Trim();
+            var emailNormalizado = usuarioUpdate.Email?.Trim().ToLowerInvariant();
+
+            if (string.IsNullOrWhiteSpace(nomeNormalizado))
+            {
+                return BadRequest("Nome é obrigatório");
+            }
+
+            if (string.IsNullOrWhiteSpace(emailNormalizado))
+            {
+                return BadRequest("Email é obrigatório");
+            }
+
+            var emailJaEmUso = await _context.Usuarios
+                .AnyAsync(u => u.IdUsuario != id && u.Email.ToLower() == emailNormalizado);
+
+            if (emailJaEmUso)
+            {
+                return BadRequest("Já existe um usuário com esse email");
+            }
+
+            usuarioExist.Nome = nomeNormalizado;
+            usuarioExist.Email = emailNormalizado;
 
             if (!string.IsNullOrWhiteSpace(usuarioUpdate.Senha))
             {
