@@ -61,7 +61,7 @@ namespace ApiFestaJulina.Controllers
             }
             
             var temPedidoPendente = await _context.Pedidos
-                .AnyAsync(p => p.IdUsuario == idUsuario && p.IdStatus == 1 || p.IdStatus == 4);
+                .AnyAsync(p => p.IdUsuario == idUsuario && (p.IdStatus == 1 || p.IdStatus == 4));
             
             return Ok(temPedidoPendente);
         }
