@@ -79,74 +79,121 @@ namespace ApiFestaJulina.Controllers
         [HttpPost("CriarPedido")]
         public async Task<ActionResult<Pedidos>> CriarPedido(PedidoDTO dto)
         {
-            
             try
             {
+                if (dto == null)
+                {
+                    return BadRequest("Dados do pedido são obrigatórios");
+                }
+
+                if (dto.ListaIngressos == null || dto.ListaIngressos.Count == 0)
+                {
+                    return BadRequest("Nenhum ingresso foi informado");
+                }
+
+                if (dto.Quantidade <= 0)
+                {
+                    return BadRequest("Quantidade inválida");
+                }
+
+                if (dto.Quantidade > 4)
+                {
+                    return BadRequest("Máximo de 4 ingressos por pedido");
+                }
+
+                if (dto.Quantidade != dto.ListaIngressos.Count)
+                {
+                    return BadRequest("Quantidade informada não confere com a quantidade de ingressos enviados");
+                }
+
+                var ingressosTipo1 = dto.ListaIngressos.Count(i => i.IdTipo != 5);
+                var ingressosTipo2 = dto.ListaIngressos.Count(i => i.IdTipo == 5);
+
+                var saldoTipo1 = await _context.Lotes
+                    .Where(l => l.TipoLote == 1 && l.Ativo)
+                    .SumAsync(l => l.Saldo);
+
+                var saldoTipo2 = await _context.Lotes
+                    .Where(l => l.TipoLote == 2 && l.Ativo)
+                    .SumAsync(l => l.Saldo);
+
+                if (saldoTipo1 < ingressosTipo1)
+                {
+                    return BadRequest("Não há saldo suficiente para os ingressos do lote padrão");
+                }
+
+                if (saldoTipo2 < ingressosTipo2)
+                {
+                    return BadRequest("Não há saldo suficiente para os ingressos do lote promocional");
+                }
+
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+
                 var pedido = new Pedidos
-            {
-                IdUsuario = dto.IdUsuario,
-                Quantidade = dto.Quantidade,
-                IdStatus = 1,
-                DtaReserva = DateTime.Now,
-                Valor = dto.Valor,
-                TipoPagamento = dto.TipoPagamento,
-                DtaFechamento = DateTime.Now.AddDays(1)
-            };
-
-            if (pedido.Quantidade > 4)
-            {
-                return BadRequest("Máximo de 4 ingressos por pedido");
-            }
-
-            _context.Pedidos.Add(pedido);
-            await _context.SaveChangesAsync();
-
-            var ingressosCriados = new List<Ingressos>();
-
-            foreach (var ingressoDto in dto.ListaIngressos)
-            {
-                int tipoLote = ingressoDto.IdTipo == 5 ? 2 : 1;
-
-                var lote = await _context.Lotes
-                    .Where(i =>
-                        i.TipoLote == tipoLote &&
-                        i.Ativo &&
-                        i.Saldo > 0
-                    )
-                    .OrderBy(i => i.IdLote)
-                    .ThenBy(i => i.DataCriacao)
-                    .FirstOrDefaultAsync();
-
-                if (lote == null)
                 {
-                    return BadRequest($"Lote {ingressoDto.IdLote} não encontrado");
-                }
-                if (lote.Saldo <= 0)
-                {
-                    return BadRequest($"Lote {lote.IdLote} sem saldo");
-                }
-                lote.Saldo--;
-
-                var codigoQR = $"{Guid.NewGuid()}{dto.IdUsuario}{lote.IdLote}";
-                var QRTextoCriptografado = _qrCodeServico.CriptografarQRcode(codigoQR);
-
-                var ingresso = new Ingressos
-                {
-                    IdPedido = pedido.IdPedido,
-                    IdLote = lote.IdLote,
-                    Valor = ingressoDto.Valor,
-                    QrCode = QRTextoCriptografado,
                     IdUsuario = dto.IdUsuario,
-                    IdTipo = ingressoDto.IdTipo,
-                    IdStatusValidacao = 1,
-                    UsuarioQueLeu = 0
+                    Quantidade = dto.Quantidade,
+                    IdStatus = 1,
+                    DtaReserva = DateTime.Now,
+                    Valor = dto.Valor,
+                    TipoPagamento = dto.TipoPagamento,
+                    DtaFechamento = DateTime.Now.AddDays(1)
                 };
 
-                _context.Ingressos.Add(ingresso);
-                ingressosCriados.Add(ingresso);
-            }
+                _context.Pedidos.Add(pedido);
+                await _context.SaveChangesAsync();
+
+                var ingressosCriados = new List<Ingressos>();
+
+                foreach (var ingressoDto in dto.ListaIngressos)
+                {
+                    int tipoLote = ingressoDto.IdTipo == 5 ? 2 : 1;
+
+                    var lote = await _context.Lotes
+                        .Where(i =>
+                            i.TipoLote == tipoLote &&
+                            i.Ativo &&
+                            i.Saldo > 0
+                        )
+                        .OrderBy(i => i.IdLote)
+                        .ThenBy(i => i.DataCriacao)
+                        .FirstOrDefaultAsync();
+
+                    if (lote == null)
+                    {
+                        await transaction.RollbackAsync();
+                        return BadRequest($"Lote {ingressoDto.IdLote} não encontrado");
+                    }
+
+                    if (lote.Saldo <= 0)
+                    {
+                        await transaction.RollbackAsync();
+                        return BadRequest($"Lote {lote.IdLote} sem saldo");
+                    }
+
+                    lote.Saldo--;
+
+                    var codigoQR = $"{Guid.NewGuid()}{dto.IdUsuario}{lote.IdLote}";
+                    var QRTextoCriptografado = _qrCodeServico.CriptografarQRcode(codigoQR);
+
+                    var ingresso = new Ingressos
+                    {
+                        IdPedido = pedido.IdPedido,
+                        IdLote = lote.IdLote,
+                        Valor = ingressoDto.Valor,
+                        QrCode = QRTextoCriptografado,
+                        IdUsuario = dto.IdUsuario,
+                        IdTipo = ingressoDto.IdTipo,
+                        IdStatusValidacao = 1,
+                        UsuarioQueLeu = 0
+                    };
+
+                    _context.Ingressos.Add(ingresso);
+                    ingressosCriados.Add(ingresso);
+                }
 
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 foreach (var ingresso in ingressosCriados)
                 {
@@ -158,10 +205,9 @@ namespace ApiFestaJulina.Controllers
                     _qrCodeServico.GerarQRCode(ingresso.QrCode, ingresso.IdIngresso.ToString());
                 }
 
-                
                 return Ok("Pedido criado com sucesso!");
-
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 return BadRequest(new
                 {
@@ -170,9 +216,149 @@ namespace ApiFestaJulina.Controllers
                     Inner2 = ex.InnerException?.InnerException?.Message
                 });
             }
-            
-            
         }
+
+            [HttpPost("ReprocessarIngressosPedido")]
+            public async Task<IActionResult> ReprocessarIngressosPedido([FromQuery] int id_pedido, [FromQuery] int id_tipo)
+            {
+                if (id_pedido <= 0)
+                {
+                    return BadRequest("ID do pedido inválido");
+                }
+
+                if (id_tipo != 1 && id_tipo != 5)
+                {
+                    return BadRequest("ID do tipo inválido. Use 1 ou 5");
+                }
+
+                var pedido = await _context.Pedidos
+                    .FirstOrDefaultAsync(p => p.IdPedido == id_pedido);
+
+                if (pedido == null)
+                {
+                    return NotFound("Pedido não encontrado");
+                }
+
+                if (pedido.Quantidade <= 0)
+                {
+                    return BadRequest("Pedido sem quantidade de ingressos");
+                }
+
+                var ingressosExistentes = await _context.Ingressos
+                    .CountAsync(i => i.IdPedido == id_pedido);
+
+                if (ingressosExistentes > pedido.Quantidade)
+                {
+                    return Conflict("O pedido já possui mais ingressos do que a quantidade informada");
+                }
+
+                if (ingressosExistentes == pedido.Quantidade)
+                {
+                    return Ok(new
+                    {
+                        mensagem = "Pedido já possui a quantidade correta de ingressos",
+                        pedidoId = pedido.IdPedido,
+                        ingressosExistentes,
+                        ingressosCriados = 0
+                    });
+                }
+
+                var faltantes = pedido.Quantidade - ingressosExistentes;
+                var tipoLote = id_tipo == 5 ? 2 : 1;
+
+                var saldoDisponivel = await _context.Lotes
+                    .Where(l => l.TipoLote == tipoLote && l.Ativo)
+                    .SumAsync(l => l.Saldo);
+
+                if (saldoDisponivel < faltantes)
+                {
+                    return BadRequest("Não há saldo suficiente no lote para recriar os ingressos faltantes");
+                }
+
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    var ingressosCriados = new List<Ingressos>();
+
+                    for (int indice = 0; indice < faltantes; indice++)
+                    {
+                        var lote = await _context.Lotes
+                            .Where(l =>
+                                l.TipoLote == tipoLote &&
+                                l.Ativo &&
+                                l.Saldo > 0)
+                            .OrderBy(l => l.IdLote)
+                            .ThenBy(l => l.DataCriacao)
+                            .FirstOrDefaultAsync();
+
+                        if (lote == null)
+                        {
+                            await transaction.RollbackAsync();
+                            return BadRequest("Não foi possível localizar um lote com saldo disponível");
+                        }
+
+                        if (lote.Saldo <= 0)
+                        {
+                            await transaction.RollbackAsync();
+                            return BadRequest($"Lote {lote.IdLote} sem saldo");
+                        }
+
+                        lote.Saldo--;
+
+                        var codigoQR = $"{Guid.NewGuid()}{pedido.IdUsuario}{lote.IdLote}";
+                        var QRTextoCriptografado = _qrCodeServico.CriptografarQRcode(codigoQR);
+
+                        var ingresso = new Ingressos
+                        {
+                            IdPedido = pedido.IdPedido,
+                            IdLote = lote.IdLote,
+                            Valor = pedido.Valor / pedido.Quantidade,
+                            QrCode = QRTextoCriptografado,
+                            IdUsuario = pedido.IdUsuario,
+                            IdTipo = id_tipo,
+                            IdStatusValidacao = 1,
+                            UsuarioQueLeu = 0
+                        };
+
+                        _context.Ingressos.Add(ingresso);
+                        ingressosCriados.Add(ingresso);
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    foreach (var ingresso in ingressosCriados)
+                    {
+                        if (string.IsNullOrWhiteSpace(ingresso.QrCode))
+                        {
+                            continue;
+                        }
+
+                        _qrCodeServico.GerarQRCode(ingresso.QrCode, ingresso.IdIngresso.ToString());
+                    }
+
+                    return Ok(new
+                    {
+                        mensagem = "Ingressos recriados com sucesso",
+                        pedidoId = pedido.IdPedido,
+                        ingressosExistentes,
+                        ingressosCriados = ingressosCriados.Count,
+                        faltantes
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+
+                    return BadRequest(new
+                    {
+                        Mensagem = ex.Message,
+                        Inner = ex.InnerException?.Message,
+                        Inner2 = ex.InnerException?.InnerException?.Message
+                    });
+                }
+            }
         
         [HttpPut("EditarPedido")]
         public async Task<ActionResult<Pedidos>> EditarPedido(int id, PedidoEditar pedido)
