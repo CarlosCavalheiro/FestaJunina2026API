@@ -219,7 +219,7 @@ namespace ApiFestaJulina.Controllers
         }
 
             [HttpPost("ReprocessarIngressosPedido")]
-            public async Task<IActionResult> ReprocessarIngressosPedido([FromQuery] int id_pedido, [FromQuery] int id_tipo)
+            public async Task<IActionResult> ReprocessarIngressosPedido([FromQuery] int id_pedido, [FromQuery] int id_tipo, [FromQuery] int id_lote)
             {
                 if (id_pedido <= 0)
                 {
@@ -229,6 +229,11 @@ namespace ApiFestaJulina.Controllers
                 if (id_tipo != 1 && id_tipo != 5)
                 {
                     return BadRequest("ID do tipo inválido. Use 1 ou 5");
+                }
+
+                if (id_lote <= 0)
+                {
+                    return BadRequest("ID do lote inválido");
                 }
 
                 var pedido = await _context.Pedidos
@@ -264,15 +269,25 @@ namespace ApiFestaJulina.Controllers
                 }
 
                 var faltantes = pedido.Quantidade - ingressosExistentes;
-                var tipoLote = id_tipo == 5 ? 2 : 1;
 
-                var saldoDisponivel = await _context.Lotes
-                    .Where(l => l.TipoLote == tipoLote && l.Ativo)
-                    .SumAsync(l => l.Saldo);
+                var loteInformado = await _context.Lotes
+                    .FirstOrDefaultAsync(l => l.IdLote == id_lote && l.Ativo);
 
-                if (saldoDisponivel < faltantes)
+                if (loteInformado == null)
                 {
-                    return BadRequest("Não há saldo suficiente no lote para recriar os ingressos faltantes");
+                    return NotFound("Lote não encontrado");
+                }
+
+                var tipoLoteEsperado = id_tipo == 5 ? 2 : 1;
+
+                if (loteInformado.TipoLote != tipoLoteEsperado)
+                {
+                    return BadRequest("O lote informado não corresponde ao tipo do ingresso");
+                }
+
+                if (loteInformado.Saldo < faltantes)
+                {
+                    return BadRequest("Não há saldo suficiente no lote informado para recriar os ingressos faltantes");
                 }
 
                 await using var transaction = await _context.Database.BeginTransactionAsync();
@@ -283,36 +298,21 @@ namespace ApiFestaJulina.Controllers
 
                     for (int indice = 0; indice < faltantes; indice++)
                     {
-                        var lote = await _context.Lotes
-                            .Where(l =>
-                                l.TipoLote == tipoLote &&
-                                l.Ativo &&
-                                l.Saldo > 0)
-                            .OrderBy(l => l.IdLote)
-                            .ThenBy(l => l.DataCriacao)
-                            .FirstOrDefaultAsync();
-
-                        if (lote == null)
+                        if (loteInformado.Saldo <= 0)
                         {
                             await transaction.RollbackAsync();
-                            return BadRequest("Não foi possível localizar um lote com saldo disponível");
+                            return BadRequest($"Lote {loteInformado.IdLote} sem saldo");
                         }
 
-                        if (lote.Saldo <= 0)
-                        {
-                            await transaction.RollbackAsync();
-                            return BadRequest($"Lote {lote.IdLote} sem saldo");
-                        }
+                        loteInformado.Saldo--;
 
-                        lote.Saldo--;
-
-                        var codigoQR = $"{Guid.NewGuid()}{pedido.IdUsuario}{lote.IdLote}";
+                        var codigoQR = $"{Guid.NewGuid()}{pedido.IdUsuario}{loteInformado.IdLote}";
                         var QRTextoCriptografado = _qrCodeServico.CriptografarQRcode(codigoQR);
 
                         var ingresso = new Ingressos
                         {
                             IdPedido = pedido.IdPedido,
-                            IdLote = lote.IdLote,
+                            IdLote = loteInformado.IdLote,
                             Valor = pedido.Valor / pedido.Quantidade,
                             QrCode = QRTextoCriptografado,
                             IdUsuario = pedido.IdUsuario,
