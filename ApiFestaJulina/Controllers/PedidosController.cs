@@ -226,9 +226,9 @@ namespace ApiFestaJulina.Controllers
                     return BadRequest("ID do pedido inválido");
                 }
 
-                if (id_tipo != 1 && id_tipo != 5)
+                if (id_tipo < 1 || id_tipo > 4)
                 {
-                    return BadRequest("ID do tipo inválido. Use 1 ou 5");
+                    return BadRequest("ID do tipo inválido. Use 1, 2, 3 ou 4");
                 }
 
                 if (id_lote <= 0)
@@ -271,18 +271,11 @@ namespace ApiFestaJulina.Controllers
                 var faltantes = pedido.Quantidade - ingressosExistentes;
 
                 var loteInformado = await _context.Lotes
-                    .FirstOrDefaultAsync(l => l.IdLote == id_lote && l.Ativo);
+                    .FirstOrDefaultAsync(l => l.IdLote == id_lote);
 
                 if (loteInformado == null)
                 {
                     return NotFound("Lote não encontrado");
-                }
-
-                var tipoLoteEsperado = id_tipo == 5 ? 2 : 1;
-
-                if (loteInformado.TipoLote != tipoLoteEsperado)
-                {
-                    return BadRequest("O lote informado não corresponde ao tipo do ingresso");
                 }
 
                 if (loteInformado.Saldo < faltantes)
