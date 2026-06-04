@@ -6,10 +6,24 @@ using ApiFestaJulina.Services;
 using Microsoft.EntityFrameworkCore;
 using QRCoder;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+var corsOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>()
+    ?.Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .ToArray()
+    ?? ["https://festajulina.senailp.com.br"];
+
+var jwtKey = builder.Configuration["Jwt:Key"];
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new InvalidOperationException("Configure Jwt:Key em variavel de ambiente ou appsettings.");
+}
 
 // Serviços
 builder.Services.AddOpenApi();
@@ -19,10 +33,17 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendCors", policy =>
     {
-        policy.WithOrigins("https://festajulina.senailp.com.br")
+        policy.WithOrigins(corsOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 // Criptografia
@@ -75,7 +96,7 @@ builder.Services.AddAuthentication("Bearer")
 
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(
-                "f8A9xK2#pL0zQw7@Rm5TnY3uVb6C!dE1"
+                jwtKey
             )
         )
     };
@@ -100,6 +121,8 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 }
 
 // Middlewares
+app.UseForwardedHeaders();
+
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
