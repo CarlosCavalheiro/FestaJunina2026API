@@ -3,11 +3,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY ApiFestaJulina.csproj ./
-RUN dotnet restore ApiFestaJulina.csproj
+COPY ApiFestaJulina/ApiFestaJulina.csproj ./ApiFestaJulina/
+RUN dotnet restore ApiFestaJulinaApiFestaJulina.csproj
 
 COPY . .
-RUN dotnet publish ApiFestaJulina.csproj -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish ApiFestaJulina/ApiFestaJulina.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
