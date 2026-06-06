@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 namespace ApiFestaJulina.Models
 {
+
+    [Table("lotes")]   
     public class Lotes
     {
         [Key]

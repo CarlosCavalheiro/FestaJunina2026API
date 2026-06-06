@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace ApiFestaJulina.Models
 {
+    [Table("ingressos")]
     public class Ingressos
     {
         [Key]

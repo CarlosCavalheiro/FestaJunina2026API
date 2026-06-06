@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ApiFestaJulina.Models
 {
+    [Table("respostas")]
     public class Resposta
     {
         [Key]
