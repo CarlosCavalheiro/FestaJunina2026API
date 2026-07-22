@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj": {}
+    "C:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj": {}
   },
   "projects": {
-    "c:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj": {
+    "C:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj",
+        "projectUniqueName": "C:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj",
         "projectName": "ApiFestaJulina",
-        "projectPath": "c:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj",
+        "projectPath": "C:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj",
         "packagesPath": "C:\\Users\\Carlos\\.nuget\\packages\\",
-        "outputPath": "c:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\obj\\",
+        "outputPath": "C:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

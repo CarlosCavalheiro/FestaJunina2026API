@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ApiFestaJulina.DTO;
 using ApiFestaJulina.Models;
 using ApiFestaJulina.Repository;
@@ -18,6 +19,17 @@ namespace ApiFestaJulina.Controllers
             _context = context;
         }
         
+        [HttpGet("listar-ingressos-lidos")]
+        public async Task<ActionResult<IEnumerable<Ingressos>>> ListarIngressosLidos()
+        {
+            var ingressosLidos = await _context.Ingressos
+                .Where(i => i.IdStatusValidacao == 3)
+                .OrderByDescending(i => i.DtEntrada)
+                .ToListAsync();
+
+            return Ok(ingressosLidos);
+        }
+
         [HttpPost("validar-qrCode")]
         public async Task<ActionResult<Ingressos>> GetQrCode([FromQuery] string qrCode, [FromBody] LeitorQrDTO dto )
         {

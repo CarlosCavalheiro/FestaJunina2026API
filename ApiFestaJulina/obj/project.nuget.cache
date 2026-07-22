@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "/bg2V8Ra6Uc=",
+  "dgSpecHash": "ncjeivC8RwA=",
   "success": true,
-  "projectFilePath": "c:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj",
+  "projectFilePath": "C:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Carlos\\.nuget\\packages\\awssdk.core\\3.7.401.13\\awssdk.core.3.7.401.13.nupkg.sha512",
     "C:\\Users\\Carlos\\.nuget\\packages\\awssdk.s3\\3.7.414.3\\awssdk.s3.3.7.414.3.nupkg.sha512",
@@ -57,5 +57,18 @@
     "C:\\Users\\Carlos\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.0.1\\system.identitymodel.tokens.jwt.8.0.1.nupkg.sha512",
     "C:\\Users\\Carlos\\.nuget\\packages\\system.security.cryptography.pkcs\\10.0.0\\system.security.cryptography.pkcs.10.0.0.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "O pacote 'Microsoft.OpenApi' 2.4.1 tem uma alta vulnerabilidade de gravidade conhecida, https://github.com/advisories/GHSA-v5pm-xwqc-g5wc",
+      "projectPath": "C:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\ArquivosCarlos\\Projetos\\Festa Junina 2026\\FestaJunina2026API\\ApiFestaJulina\\ApiFestaJulina.csproj",
+      "libraryId": "Microsoft.OpenApi",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
 }
