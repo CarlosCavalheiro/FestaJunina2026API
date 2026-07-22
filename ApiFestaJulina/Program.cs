@@ -87,7 +87,7 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 // Swagger / OpenAPI
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging() || app.Environment.IsProduction())
 {
     app.MapOpenApi();
 
