@@ -84,6 +84,7 @@ namespace ApiFestaJulina.Controllers
                         Valor = i.Valor,
                         QrCode = i.QrCode,
                         IdUsuario = u.IdUsuario,
+                        IdStatusValidacao = i.IdStatusValidacao,
                         Nome = u.Nome,
                         Email = u.Email,
                         Telefone = u.Telefone,
