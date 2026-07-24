@@ -29,6 +29,7 @@ namespace ApiFestaJulina.Controllers
             var listarperguntas = await _context.Perguntas.ToListAsync();
             return Ok(listarperguntas);
         }
+
         [HttpPost("registro-pergunta")]
         public async Task<ActionResult<Perguntas>> RegistroPerguntas(NewPerguntas newPergunta)
         {
@@ -43,6 +44,7 @@ namespace ApiFestaJulina.Controllers
             await _context.SaveChangesAsync();
             return Ok(perguntas);
         }
+
         [HttpPost("registro-resposta")]
         public async Task<ActionResult<Resposta>> RegistroResposta(NewResposta newResposta)
         {
@@ -73,7 +75,7 @@ namespace ApiFestaJulina.Controllers
             return Ok("Pergunta removida com sucesso");
         }
 
-        [HttpGet("resposta-por-idpergunta")]//Puxa as respostas pelo idPergunta
+        [HttpGet("resposta-por-idpergunta")] //Puxa as respostas pelo idPergunta
         public async Task<ActionResult<List<Resposta>>> GetRespostaPorPerguntaId([FromQuery] int idPergunta)
         {
             var perguntaExiste = await _context.Perguntas
